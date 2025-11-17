@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Detektivspiel 🔍</title>
+    <base href="/detective-game/" />
+    <link href="css/app.css" rel="stylesheet" />
+    <link href="Detektivspiel.styles.css" rel="stylesheet" />
+</head>
+<body>
+    <div id="app">
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; font-family: 'Segoe UI', sans-serif;">
+            <div style="font-size: 60px; animation: spin 2s linear infinite;">🔍</div>
+            <h2 style="color: #667eea; margin-top: 20px;">Lade Detektivspiel...</h2>
+        </div>
+        <style>
+            @keyframes spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+        </style>
+    </div>
+
+    <div id="blazor-error-ui">
+        Ein unerwarteter Fehler ist aufgetreten.
+        <a href="" class="reload">Neu laden</a>
+        <a class="dismiss">🗙</a>
+    </div>
+    <script src="_framework/blazor.webassembly.js"></script>
+</body>
+</html>

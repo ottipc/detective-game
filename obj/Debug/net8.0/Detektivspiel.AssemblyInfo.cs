@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Detektivspiel")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b789f6f77adca9c881798cb9c678774ccc4d875f")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+96d12457479dbb3c76519eacc231cbd3c05cde32")]
 [assembly: System.Reflection.AssemblyProductAttribute("Detektivspiel")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Detektivspiel")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

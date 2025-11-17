@@ -1,0 +1,74 @@
+@page "/"
+@inject GameController GameController
+
+<PageTitle>Detektivspiel</PageTitle>
+
+<div class="detective-game">
+    <h2>Willkommen beim Detektivspiel! 🕵️</h2>
+    
+    @if (!gameStarted)
+    {
+        <div class="start-section">
+            <p>Ein Mord wurde begangen! Kannst du den Täter identifizieren?</p>
+            <button class="btn btn-primary" @onclick="StartGame">Spiel starten</button>
+        </div>
+    }
+    else
+    {
+        <div class="game-section">
+            <h3>Verdächtige:</h3>
+            <div class="suspects-list">
+                @foreach (var suspect in GameController.Suspects)
+                {
+                    <div class="suspect-card">
+                        <h4>@suspect.Name</h4>
+                        <p><strong>Alibi:</strong> @suspect.Alibi</p>
+                        <p><strong>Motiv:</strong> @suspect.Motiv</p>
+                    </div>
+                }
+            </div>
+
+            <div class="guess-section">
+                <h3>Wer ist der Täter?</h3>
+                <select @bind="selectedSuspect" class="form-select">
+                    <option value="">-- Verdächtigen wählen --</option>
+                    @foreach (var name in GameController.GetSuspectNames())
+                    {
+                        <option value="@name">@name</option>
+                    }
+                </select>
+                <button class="btn btn-success" @onclick="MakeGuess" disabled="@string.IsNullOrEmpty(selectedSuspect)">
+                    Verdacht aussprechen
+                </button>
+            </div>
+
+            @if (!string.IsNullOrEmpty(resultMessage))
+            {
+                <div class="result-message @(isCorrect ? "correct" : "incorrect")">
+                    @resultMessage
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private bool gameStarted = false;
+    private string selectedSuspect = "";
+    private string resultMessage = "";
+    private bool isCorrect = false;
+
+    private void StartGame()
+    {
+        GameController.Init();
+        gameStarted = true;
+        resultMessage = "";
+        selectedSuspect = "";
+    }
+
+    private void MakeGuess()
+    {
+        resultMessage = GameController.CheckGuess(selectedSuspect);
+        isCorrect = resultMessage.Contains("✅");
+    }
+}

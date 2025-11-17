@@ -1,18 +1,26 @@
-using Avalonia;
-using Avalonia.ReactiveUI;
-using Detektivspiel.Views;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
+using Detektivspiel.Controllers;
 
-namespace Detektivspiel
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddRazorPages();
+builder.Services.AddServerSideBlazor();
+builder.Services.AddScoped<GameController>();
+
+var app = builder.Build();
+
+if (!app.Environment.IsDevelopment())
 {
-    class Program
-    {
-        static void Main(string[] args) =>
-            BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
-
-        public static AppBuilder BuildAvaloniaApp() =>
-            AppBuilder.Configure<App>()
-                      .UsePlatformDetect()
-                      .LogToTrace()
-                      .UseReactiveUI();
-    }
+    app.UseExceptionHandler("/Error");
+    app.UseHsts();
 }
+
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+app.UseRouting();
+
+app.MapBlazorHub();
+app.MapFallbackToPage("/_Host");
+
+app.Run();

@@ -1,7 +1,7 @@
 {
   "mainAssemblyName": "Detektivspiel",
   "resources": {
-    "hash": "sha256-28cski35NXENaGKxtd4YEk3i5hA5LL4o+8iTpZqHmHQ=",
+    "hash": "sha256-5GplRSrmmQrGK6ZCB4pac+tFqoJK6Md21zkx5C/q2ZI=",
     "jsModuleNative": {
       "dotnet.native.js": "sha256-vtotCeXt2UD6oc459laJT32vBgigZ+eLoUmdeFkvYDk="
     },
@@ -18,7 +18,7 @@
     },
     "coreAssembly": {},
     "assembly": {
-      "Microsoft.AspNetCore.Components.wasm": "sha256-BYkrJfKv3SnzIFlksh+lncmQvBNgF0uPlm2XJV26YG0=",
+      "Microsoft.AspNetCore.Components.wasm": "sha256-GhR8zYOXzaa7+ujzUo5YIUf1GPxbKyn2CIbL9Mbfw1M=",
       "Microsoft.AspNetCore.Components.Web.wasm": "sha256-lKVvuB/5AXgnNDidIpeCE3l5U+w8VHAJLQ5rou1YQj8=",
       "Microsoft.AspNetCore.Components.WebAssembly.wasm": "sha256-seVtoNDfzQciXue3LvPvIMA9hgox3tYbXZ3mK/GMOpI=",
       "Microsoft.Extensions.Configuration.wasm": "sha256-od574rRtVVRJj+24jbl8j3GdQFpxlJOpSx+pEMw1Q18=",
@@ -36,18 +36,18 @@
       "System.Collections.wasm": "sha256-3yXFUxx330Yu3Abqj9ZOBCB5wavFip4K8z9XnEPf5+Y=",
       "System.ComponentModel.wasm": "sha256-LhJJEJ3iG2a04R9QyKFhRpkVTpEn74e9ukCtx8oGZ40=",
       "System.Console.wasm": "sha256-CPUpsOPVlxH36cm2dHRRl2xzqEvx7rhQGCw8ORdZyho=",
-      "System.Linq.wasm": "sha256-ihEmcPXa4TCa9YffplLBkvZx3saNSM2w1MWFDsxtAbQ=",
+      "System.Linq.wasm": "sha256-Q3+Sib99auDIqPEAlrlAew8eNdVbO3cSJdQdz+hkohg=",
       "System.Memory.wasm": "sha256-Oq9UQBaIAhWyqvCLp+a38H24Pn8ozR+UzdtYmlnjpNs=",
       "System.Net.Http.wasm": "sha256-XeIFDMx/0HO3Ea6UzNqv7q2XfTP/UVXXvo5yGpDaHmU=",
       "System.Net.Primitives.wasm": "sha256-SzHwskVflVUF7fSY3wmnCR179HN70oOGfF/t1FsL58s=",
       "System.Private.Uri.wasm": "sha256-NcafEnVHQEJhihynfM4Q/W83IetSIwBLSsXXIGvaJEY=",
       "System.Runtime.InteropServices.JavaScript.wasm": "sha256-9n1XOXHN9vcTYzl9Imw1PwKAZwy1Z7OjsXBrUnVTtCU=",
-      "System.Runtime.wasm": "sha256-I7Bi4h4/fr3qcyDZG4ehZ6sH71JGwAC09axsQKqoZKw=",
+      "System.Runtime.wasm": "sha256-HXvjdmJIRpQYjWUM/PSKWRaEa9z7AxgtKEiHOy7wxo4=",
       "System.Text.Encodings.Web.wasm": "sha256-W1+3Cs/g9HhgLy8QR8yJAQbxhEi61ZFQGNgOUretBKQ=",
       "System.Text.Json.wasm": "sha256-TuEJeuPIhQJXCbvQhynsX1RGIvn8YsWg1zTGIINV+Mo=",
       "System.Text.RegularExpressions.wasm": "sha256-N5iEwt2bfvrglh1Ef1pkKFXQo82wOkhE64+4FGK7Ru8=",
-      "System.Private.CoreLib.wasm": "sha256-BCI55qM63U0Hbp9xo98LgjdD3R1KjJqIows1P9MHB6U=",
-      "Detektivspiel.wasm": "sha256-7+A1UHo4xIWntnYSep8gCwmoZe4iP8oRqZQJEOba2iM="
+      "System.Private.CoreLib.wasm": "sha256-Bsbl6E7zvEdvZSLZXyvqEMrDaK1ggKma1IKM1hKEF/U=",
+      "Detektivspiel.wasm": "sha256-p3aSQ7KNxcKBZJc5Ey3kdwaho2FySA5aM5JkcWTA8zk="
     }
   },
   "cacheBootResources": true,

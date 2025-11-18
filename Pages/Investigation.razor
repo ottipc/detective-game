@@ -1,0 +1,238 @@
+@page "/investigation"
+@inject GameController GameController
+
+<PageTitle>Ermittlungen - Verdächtige</PageTitle>
+
+<div class="investigation-page">
+    <h2>🔍 Ermittlungsakte - Verdächtige</h2>
+    
+    @if (!gameStarted)
+    {
+        <div class="start-section">
+            <p>Starte die Ermittlungen und analysiere alle Verdächtigen!</p>
+            <button class="btn btn-primary" @onclick="StartInvestigation">Ermittlung starten</button>
+        </div>
+    }
+    else
+    {
+        <div class="filters-section">
+            <div class="filter-row">
+                <div class="filter-item">
+                    <label>🔎 Name suchen:</label>
+                    <input type="text" @bind="nameFilter" @bind:event="oninput" placeholder="Name eingeben..." class="filter-input" />
+                </div>
+                
+                <div class="filter-item">
+                    <label>📍 Ort:</label>
+                    <select @bind="locationFilter" class="filter-select">
+                        <option value="">Alle Orte</option>
+                        @foreach (var location in GetUniqueLocations())
+                        {
+                            <option value="@location">@location</option>
+                        }
+                    </select>
+                </div>
+                
+                <div class="filter-item">
+                    <label>💼 Beruf:</label>
+                    <select @bind="occupationFilter" class="filter-select">
+                        <option value="">Alle Berufe</option>
+                        @foreach (var occupation in GetUniqueOccupations())
+                        {
+                            <option value="@occupation">@occupation</option>
+                        }
+                    </select>
+                </div>
+                
+                <div class="filter-item">
+                    <label>⚠️ Min. Verdacht:</label>
+                    <input type="range" min="0" max="10" @bind="minSuspicionLevel" @bind:event="oninput" class="filter-range" />
+                    <span class="range-value">@minSuspicionLevel</span>
+                </div>
+                
+                <button class="btn btn-secondary" @onclick="ClearFilters">Filter zurücksetzen</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="suspects-table">
+                <thead>
+                    <tr>
+                        <th @onclick="() => SortBy(nameof(Suspect.Id))">
+                            ID @GetSortIcon(nameof(Suspect.Id))
+                        </th>
+                        <th @onclick="() => SortBy(nameof(Suspect.Name))">
+                            Name @GetSortIcon(nameof(Suspect.Name))
+                        </th>
+                        <th @onclick="() => SortBy(nameof(Suspect.Age))">
+                            Alter @GetSortIcon(nameof(Suspect.Age))
+                        </th>
+                        <th @onclick="() => SortBy(nameof(Suspect.Occupation))">
+                            Beruf @GetSortIcon(nameof(Suspect.Occupation))
+                        </th>
+                        <th @onclick="() => SortBy(nameof(Suspect.Location))">
+                            Ort @GetSortIcon(nameof(Suspect.Location))
+                        </th>
+                        <th @onclick="() => SortBy(nameof(Suspect.Relationship))">
+                            Beziehung @GetSortIcon(nameof(Suspect.Relationship))
+                        </th>
+                        <th @onclick="() => SortBy(nameof(Suspect.SuspicionLevel))">
+                            Verdacht @GetSortIcon(nameof(Suspect.SuspicionLevel))
+                        </th>
+                        <th>Alibi</th>
+                        <th>Motiv</th>
+                        <th>Aktion</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var suspect in GetFilteredAndSortedSuspects())
+                    {
+                        <tr class="suspect-row @(selectedSuspect?.Id == suspect.Id ? "selected" : "")">
+                            <td>@suspect.Id</td>
+                            <td class="name-cell">@suspect.Name</td>
+                            <td>@suspect.Age</td>
+                            <td>@suspect.Occupation</td>
+                            <td>@suspect.Location</td>
+                            <td>@suspect.Relationship</td>
+                            <td>
+                                <div class="suspicion-bar">
+                                    <div class="suspicion-fill" style="width: @(suspect.SuspicionLevel * 10)%"></div>
+                                    <span class="suspicion-text">@suspect.SuspicionLevel/10</span>
+                                </div>
+                            </td>
+                            <td class="alibi-cell">@suspect.Alibi</td>
+                            <td class="motive-cell">@suspect.Motiv</td>
+                            <td>
+                                <button class="btn-accuse" @onclick="() => AccuseSuspect(suspect)">
+                                    Anklagen
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="stats-section">
+            <div class="stat-card">
+                <span class="stat-label">Verdächtige gesamt:</span>
+                <span class="stat-value">@GameController.Suspects.Count</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Gefilterte Ergebnisse:</span>
+                <span class="stat-value">@GetFilteredAndSortedSuspects().Count()</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Ø Verdachtslevel:</span>
+                <span class="stat-value">@GetAverageSuspicion().ToString("F1")</span>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(resultMessage))
+        {
+            <div class="result-message @(isCorrect ? "correct" : "incorrect")">
+                @resultMessage
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private bool gameStarted = false;
+    private string nameFilter = "";
+    private string locationFilter = "";
+    private string occupationFilter = "";
+    private int minSuspicionLevel = 0;
+    private string sortColumn = nameof(Suspect.SuspicionLevel);
+    private bool sortAscending = false;
+    private Suspect? selectedSuspect;
+    private string resultMessage = "";
+    private bool isCorrect = false;
+
+    private void StartInvestigation()
+    {
+        GameController.Init();
+        gameStarted = true;
+        resultMessage = "";
+    }
+
+    private IEnumerable<Suspect> GetFilteredAndSortedSuspects()
+    {
+        var filtered = GameController.Suspects.AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(nameFilter))
+            filtered = filtered.Where(s => s.Name.Contains(nameFilter, StringComparison.OrdinalIgnoreCase));
+
+        if (!string.IsNullOrWhiteSpace(locationFilter))
+            filtered = filtered.Where(s => s.Location == locationFilter);
+
+        if (!string.IsNullOrWhiteSpace(occupationFilter))
+            filtered = filtered.Where(s => s.Occupation == occupationFilter);
+
+        if (minSuspicionLevel > 0)
+            filtered = filtered.Where(s => s.SuspicionLevel >= minSuspicionLevel);
+
+        // Sorting
+        filtered = sortColumn switch
+        {
+            nameof(Suspect.Id) => sortAscending ? filtered.OrderBy(s => s.Id) : filtered.OrderByDescending(s => s.Id),
+            nameof(Suspect.Name) => sortAscending ? filtered.OrderBy(s => s.Name) : filtered.OrderByDescending(s => s.Name),
+            nameof(Suspect.Age) => sortAscending ? filtered.OrderBy(s => s.Age) : filtered.OrderByDescending(s => s.Age),
+            nameof(Suspect.Occupation) => sortAscending ? filtered.OrderBy(s => s.Occupation) : filtered.OrderByDescending(s => s.Occupation),
+            nameof(Suspect.Location) => sortAscending ? filtered.OrderBy(s => s.Location) : filtered.OrderByDescending(s => s.Location),
+            nameof(Suspect.Relationship) => sortAscending ? filtered.OrderBy(s => s.Relationship) : filtered.OrderByDescending(s => s.Relationship),
+            nameof(Suspect.SuspicionLevel) => sortAscending ? filtered.OrderBy(s => s.SuspicionLevel) : filtered.OrderByDescending(s => s.SuspicionLevel),
+            _ => filtered.OrderByDescending(s => s.SuspicionLevel)
+        };
+
+        return filtered;
+    }
+
+    private void SortBy(string column)
+    {
+        if (sortColumn == column)
+            sortAscending = !sortAscending;
+        else
+        {
+            sortColumn = column;
+            sortAscending = true;
+        }
+    }
+
+    private string GetSortIcon(string column)
+    {
+        if (sortColumn != column) return "⇅";
+        return sortAscending ? "⬆️" : "⬇️";
+    }
+
+    private IEnumerable<string> GetUniqueLocations()
+    {
+        return GameController.Suspects.Select(s => s.Location).Distinct().OrderBy(l => l);
+    }
+
+    private IEnumerable<string> GetUniqueOccupations()
+    {
+        return GameController.Suspects.Select(s => s.Occupation).Distinct().OrderBy(o => o);
+    }
+
+    private void ClearFilters()
+    {
+        nameFilter = "";
+        locationFilter = "";
+        occupationFilter = "";
+        minSuspicionLevel = 0;
+    }
+
+    private double GetAverageSuspicion()
+    {
+        var suspects = GetFilteredAndSortedSuspects().ToList();
+        return suspects.Any() ? suspects.Average(s => s.SuspicionLevel) : 0;
+    }
+
+    private void AccuseSuspect(Suspect suspect)
+    {
+        selectedSuspect = suspect;
+        resultMessage = GameController.CheckGuess(suspect.Name);
+        isCorrect = resultMessage.Contains("✅");
+    }
+}

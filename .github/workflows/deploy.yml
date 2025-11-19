@@ -1,10 +1,8 @@
 name: Deploy to GitHub Pages
-
 on:
   push:
     branches: [ blazor ]
   workflow_dispatch:
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -19,8 +17,14 @@ jobs:
     - name: Publish
       run: dotnet publish Detektivspiel.csproj -c Release -o release --nologo
     
-    - name: Change base-tag in index.html
+    - name: Change base-tag in index.html from / to /detective-game/
       run: sed -i 's/<base href="\/" \/>/<base href="\/detective-game\/" \/>/g' release/wwwroot/index.html
+    
+    - name: Fix service-worker-assets.js for subpath
+      run: |
+        if [ -f "release/wwwroot/service-worker-assets.js" ]; then
+          sed -i 's/\"\//\"\/detective-game\//g' release/wwwroot/service-worker-assets.js
+        fi
     
     - name: copy index.html to 404.html
       run: cp release/wwwroot/index.html release/wwwroot/404.html

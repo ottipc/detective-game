@@ -1,0 +1,184 @@
+@page "/csv-import"
+@using System.Globalization
+@using CsvHelper
+@using CsvHelper.Configuration
+@using Microsoft.AspNetCore.Components.Forms
+
+<PageTitle>CSV Import</PageTitle>
+
+<h3>CSV Daten Import & Analyse</h3>
+
+<div class="upload-section">
+    <InputFile OnChange="@HandleFileSelected" accept=".csv" class="file-input" />
+    @if (_isLoading)
+    {
+        <div class="spinner"></div>
+        <span>Datei wird verarbeitet...</span>
+    }
+    @if (_errorMessage != null)
+    {
+        <div class="alert alert-danger">@_errorMessage</div>
+    }
+</div>
+
+@if (_records.Any())
+{
+    <div class="data-section">
+        <div class="controls-bar">
+            <div class="info">
+                <strong>@_records.Count</strong> Datensätze geladen
+            </div>
+            <div class="filter-box">
+                <input type="text" 
+                       @bind="_filterText" 
+                       @bind:event="oninput"
+                       placeholder="🔍 Suche in allen Spalten..." 
+                       class="search-input" />
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="data-grid">
+                <thead>
+                    <tr>
+                        @foreach (var header in _headers)
+                        {
+                            <th @onclick="() => SortBy(header)" class="sortable">
+                                @header
+                                @if (_sortColumn == header)
+                                {
+                                    <span class="sort-indicator">@(_sortAscending ? "▲" : "▼")</span>
+                                }
+                            </th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var record in GetFilteredAndSortedRecords())
+                    {
+                        <tr>
+                            @foreach (var header in _headers)
+                            {
+                                <td>@record.GetValueOrDefault(header, "")</td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (GetFilteredAndSortedRecords().Count() == 0 && _records.Any())
+        {
+            <div class="no-results">
+                Keine Ergebnisse für "<strong>@_filterText</strong>" gefunden
+            </div>
+        }
+    </div>
+}
+else if (!_isLoading)
+{
+    <div class="empty-state">
+        <div class="empty-icon">📄</div>
+        <h4>Keine Daten geladen</h4>
+        <p>Wählen Sie eine CSV-Datei aus, um zu beginnen</p>
+    </div>
+}
+
+@code {
+    private List<Dictionary<string, string>> _records = new();
+    private List<string> _headers = new();
+    private string? _errorMessage;
+    private bool _isLoading;
+    private string _filterText = "";
+    private string? _sortColumn;
+    private bool _sortAscending = true;
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        _isLoading = true;
+        _errorMessage = null;
+        _records.Clear();
+        _headers.Clear();
+        StateHasChanged();
+
+        try
+        {
+            var file = e.File;
+            
+            if (file.Size > 10 * 1024 * 1024) // 10MB limit
+            {
+                _errorMessage = "Datei ist zu groß (max. 10 MB)";
+                return;
+            }
+
+            using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
+            using var reader = new StreamReader(stream);
+            using var csv = new CsvReader(reader, new CsvConfiguration(CultureInfo.InvariantCulture)
+            {
+                Delimiter = ";",
+                HasHeaderRecord = true,
+                MissingFieldFound = null,
+                BadDataFound = null
+            });
+
+            await csv.ReadAsync();
+            csv.ReadHeader();
+            _headers = csv.HeaderRecord?.ToList() ?? new List<string>();
+
+            while (await csv.ReadAsync())
+            {
+                var record = new Dictionary<string, string>();
+                foreach (var header in _headers)
+                {
+                    record[header] = csv.GetField(header) ?? "";
+                }
+                _records.Add(record);
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Fehler beim Laden der Datei: {ex.Message}";
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void SortBy(string column)
+    {
+        if (_sortColumn == column)
+        {
+            _sortAscending = !_sortAscending;
+        }
+        else
+        {
+            _sortColumn = column;
+            _sortAscending = true;
+        }
+    }
+
+    private IEnumerable<Dictionary<string, string>> GetFilteredAndSortedRecords()
+    {
+        var filtered = _records.AsEnumerable();
+
+        // Filter
+        if (!string.IsNullOrWhiteSpace(_filterText))
+        {
+            filtered = filtered.Where(record =>
+                record.Values.Any(value =>
+                    value.Contains(_filterText, StringComparison.OrdinalIgnoreCase)));
+        }
+
+        // Sort
+        if (_sortColumn != null)
+        {
+            filtered = _sortAscending
+                ? filtered.OrderBy(r => r.GetValueOrDefault(_sortColumn, ""))
+                : filtered.OrderByDescending(r => r.GetValueOrDefault(_sortColumn, ""));
+        }
+
+        return filtered;
+    }
+}

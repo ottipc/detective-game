@@ -1,15 +1,14 @@
 @inherits LayoutComponentBase
-
 <div class="page">
     <main>
         <div class="top-row px-4">
             <h1>🔍 Detektivspiel</h1>
             <nav class="main-nav">
-                <a href="/" class="nav-link">🎮 Spiel</a>
-                <a href="/investigation" class="nav-link">🔎 Ermittlungen</a>
+                <NavLink href="/" class="nav-link" Match="NavLinkMatch.All">🎮 Spiel</NavLink>
+                <NavLink href="/investigation" class="nav-link">🔎 Ermittlungen</NavLink>
+                <NavLink href="/csv-import" class="nav-link">📊 CSV Import</NavLink>
             </nav>
         </div>
-
         <article class="content px-4">
             @Body
         </article>

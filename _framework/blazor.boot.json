@@ -1,7 +1,7 @@
 {
   "mainAssemblyName": "Detektivspiel",
   "resources": {
-    "hash": "sha256-5lSiRq9AFaCpXO6Smf3S+4ILRq4QIeJx7m/tNd2LuM0=",
+    "hash": "sha256-TwspUqBthw4wcC7HHJLP2ljOeBGgFqCMWulMi4umQXs=",
     "jsModuleNative": {
       "dotnet.native.js": "sha256-vtotCeXt2UD6oc459laJT32vBgigZ+eLoUmdeFkvYDk="
     },
@@ -66,7 +66,7 @@
       "System.Threading.wasm": "sha256-SHFDCmn7+ooZiMlyu+MNMuvxRZEqxVLqZX+wEYQGXd4=",
       "System.wasm": "sha256-I4hhyMuUoHdrzDopL9tlnkL/Skg+0OO+gmkOXNT3dcg=",
       "System.Private.CoreLib.wasm": "sha256-Mcnl3pQ1Es80MM5pRY3aQiPVcO/C0yxwFqBT40a10uA=",
-      "Detektivspiel.wasm": "sha256-2iX85SVpk8xvujyCKeYN5Gi3oxaakLN5VuH0W11lFkg="
+      "Detektivspiel.wasm": "sha256-V15eUKthT8NRBxDQbtzC0KYGdAPd9bkyPOOmgWVPwfo="
     }
   },
   "cacheBootResources": true,

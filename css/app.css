@@ -975,3 +975,41 @@ body::after {
     background: rgba(255,255,255,0.2);
     transform: translateY(-2px);
 }
+
+/* Fix für klickbare Navigation */
+.top-row {
+    position: relative;
+    z-index: 100;
+}
+
+.main-nav {
+    display: flex;
+    gap: 15px;
+    margin-top: 15px;
+    justify-content: center;
+    position: relative;
+    z-index: 101;
+}
+
+.nav-link {
+    color: white !important;
+    text-decoration: none !important;
+    padding: 10px 20px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.1);
+    transition: all 0.3s ease;
+    font-weight: bold;
+    cursor: pointer !important;
+    pointer-events: auto !important;
+    display: inline-block;
+}
+
+.nav-link:hover {
+    background: rgba(255,255,255,0.3) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.nav-link:active {
+    transform: translateY(0);
+}

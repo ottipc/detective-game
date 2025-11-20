@@ -4,6 +4,8 @@
 @using CsvHelper.Configuration
 @using Microsoft.AspNetCore.Components.Forms
 @using ApexCharts
+@using Detektivspiel.Services
+@inject SupabaseService Supabase
 
 <PageTitle>CSV Import - Crime Analytics</PageTitle>
 
@@ -20,10 +22,33 @@
     {
         <div class="alert alert-danger">@_errorMessage</div>
     }
+    @if (_successMessage != null)
+    {
+        <div class="alert alert-success">@_successMessage</div>
+    }
 </div>
 
 @if (_records.Any())
 {
+    <div class="save-section">
+        <h4>💾 In Cloud speichern</h4>
+        <div class="save-form">
+            <input type="text" @bind="_datasetName" placeholder="Dataset Name (z.B. 'Berühmte Detektive')" class="form-control" />
+            <input type="text" @bind="_datasetDescription" placeholder="Beschreibung (optional)" class="form-control" />
+            <input type="text" @bind="_uploaderName" placeholder="Dein Name (optional)" class="form-control" />
+            <button @onclick="SaveToCloud" class="btn-save" disabled="@_isSaving">
+                @if (_isSaving)
+                {
+                    <span>Speichert...</span>
+                }
+                else
+                {
+                    <span>☁️ In Cloud speichern</span>
+                }
+            </button>
+        </div>
+    </div>
+
     <div class="dashboard-container">
         <div class="charts-grid">
             <div class="chart-card">
@@ -147,10 +172,49 @@
 }
 else if (!_isLoading)
 {
+    <div class="cloud-datasets-section">
+        <h4>☁️ Gespeicherte Datasets aus der Cloud</h4>
+        @if (_cloudDatasets == null)
+        {
+            <button @onclick="LoadCloudDatasets" class="btn-secondary">Datasets laden</button>
+        }
+        else if (!_cloudDatasets.Any())
+        {
+            <p>Noch keine Datasets vorhanden. Sei der Erste!</p>
+        }
+        else
+        {
+            <div class="datasets-grid">
+                @foreach (var dataset in _cloudDatasets)
+                {
+                    <div class="dataset-card">
+                        <h5>@dataset.Name</h5>
+                        @if (!string.IsNullOrEmpty(dataset.Description))
+                        {
+                            <p class="dataset-description">@dataset.Description</p>
+                        }
+                        <div class="dataset-meta">
+                            <span>📊 @dataset.Data.Count Einträge</span>
+                            <span>📥 @dataset.DownloadCount Downloads</span>
+                            @if (!string.IsNullOrEmpty(dataset.UploaderName))
+                            {
+                                <span>👤 @dataset.UploaderName</span>
+                            }
+                            <span>📅 @dataset.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</span>
+                        </div>
+                        <button @onclick="() => LoadDatasetFromCloud(dataset)" class="btn-load">
+                            Laden & Analysieren
+                        </button>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
     <div class="empty-state">
         <div class="empty-icon">📄</div>
         <h4>Keine Daten geladen</h4>
-        <p>Wählen Sie eine CSV-Datei aus, um zu beginnen</p>
+        <p>Wählen Sie eine CSV-Datei aus oder laden Sie ein Dataset aus der Cloud</p>
     </div>
 }
 
@@ -158,7 +222,9 @@ else if (!_isLoading)
     private List<Dictionary<string, string>> _records = new();
     private List<string> _headers = new();
     private string? _errorMessage;
+    private string? _successMessage;
     private bool _isLoading;
+    private bool _isSaving;
     private string _filterText = "";
     private string? _sortColumn;
     private bool _sortAscending = true;
@@ -167,16 +233,100 @@ else if (!_isLoading)
     private List<ChartData> _ageData = new();
     private List<ChartData> _locationData = new();
 
+    private string _datasetName = "";
+    private string _datasetDescription = "";
+    private string _uploaderName = "";
+
+    private List<Models.CsvDataset>? _cloudDatasets;
+
     public class ChartData
     {
         public string Label { get; set; } = "";
         public decimal Value { get; set; }
     }
 
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCloudDatasets();
+    }
+
+    private async Task LoadCloudDatasets()
+    {
+        try
+        {
+            _cloudDatasets = await Supabase.GetDatasetsAsync();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Fehler beim Laden der Cloud-Datasets: {ex.Message}";
+        }
+    }
+
+    private async Task LoadDatasetFromCloud(Models.CsvDataset dataset)
+    {
+        _records = dataset.Data;
+        _headers = dataset.Headers;
+        
+        await Supabase.IncrementDownloadCountAsync(dataset.Id);
+        
+        GenerateCharts();
+        StateHasChanged();
+    }
+
+    private async Task SaveToCloud()
+    {
+        if (string.IsNullOrWhiteSpace(_datasetName))
+        {
+            _errorMessage = "Bitte gib einen Namen für das Dataset an!";
+            return;
+        }
+
+        _isSaving = true;
+        _errorMessage = null;
+        _successMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            var saved = await Supabase.SaveDatasetAsync(
+                _datasetName,
+                string.IsNullOrWhiteSpace(_datasetDescription) ? null : _datasetDescription,
+                _headers,
+                _records,
+                string.IsNullOrWhiteSpace(_uploaderName) ? null : _uploaderName
+            );
+
+            if (saved != null)
+            {
+                _successMessage = $"✅ Dataset '{_datasetName}' erfolgreich in der Cloud gespeichert!";
+                _datasetName = "";
+                _datasetDescription = "";
+                _uploaderName = "";
+                
+                await LoadCloudDatasets();
+            }
+            else
+            {
+                _errorMessage = "Fehler beim Speichern in der Cloud.";
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Fehler beim Speichern: {ex.Message}";
+        }
+        finally
+        {
+            _isSaving = false;
+            StateHasChanged();
+        }
+    }
+
     private async Task HandleFileSelected(InputFileChangeEventArgs e)
     {
         _isLoading = true;
         _errorMessage = null;
+        _successMessage = null;
         _records.Clear();
         _headers.Clear();
         StateHasChanged();
@@ -230,7 +380,6 @@ else if (!_isLoading)
 
     private void GenerateCharts()
     {
-        // Suspicion Chart
         if (_headers.Contains("Faelle_Geloest"))
         {
             _suspicionData = _records
@@ -245,7 +394,6 @@ else if (!_isLoading)
                 .ToList();
         }
 
-        // Age Distribution
         if (_headers.Contains("Alter"))
         {
             _ageData = _records
@@ -261,7 +409,6 @@ else if (!_isLoading)
                 .ToList();
         }
 
-        // Location Distribution
         if (_headers.Contains("Stadt"))
         {
             _locationData = _records

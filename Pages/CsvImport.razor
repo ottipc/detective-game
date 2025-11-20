@@ -3,10 +3,11 @@
 @using CsvHelper
 @using CsvHelper.Configuration
 @using Microsoft.AspNetCore.Components.Forms
+@using ApexCharts
 
-<PageTitle>CSV Import</PageTitle>
+<PageTitle>CSV Import - Crime Analytics</PageTitle>
 
-<h3>CSV Daten Import & Analyse</h3>
+<h3>🔍 CSV Daten Import & Crime Analytics Dashboard</h3>
 
 <div class="upload-section">
     <InputFile OnChange="@HandleFileSelected" accept=".csv" class="file-input" />
@@ -23,6 +24,75 @@
 
 @if (_records.Any())
 {
+    <div class="dashboard-container">
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h4>📊 Gelöste Fälle - Top Detektive</h4>
+                @if (_suspicionData.Any())
+                {
+                    <ApexChart TItem="ChartData" Title="">
+                        <ApexPointSeries TItem="ChartData"
+                                        Items="_suspicionData"
+                                        Name="Gelöste Fälle"
+                                        SeriesType="SeriesType.Bar"
+                                        XValue="@(e => e.Label)"
+                                        YAggregate="@(e => e.Sum(y => y.Value))"
+                                        OrderByDescending="e => e.Y" />
+                    </ApexChart>
+                }
+            </div>
+            
+            <div class="chart-card">
+                <h4>🎂 Altersverteilung</h4>
+                @if (_ageData.Any())
+                {
+                    <ApexChart TItem="ChartData" Title="">
+                        <ApexPointSeries TItem="ChartData"
+                                        Items="_ageData"
+                                        Name="Detektive"
+                                        SeriesType="SeriesType.Pie"
+                                        XValue="@(e => e.Label)"
+                                        YAggregate="@(e => e.Sum(y => y.Value))" />
+                    </ApexChart>
+                }
+            </div>
+            
+            <div class="chart-card">
+                <h4>🗺️ Top Städte</h4>
+                @if (_locationData.Any())
+                {
+                    <ApexChart TItem="ChartData" Title="">
+                        <ApexPointSeries TItem="ChartData"
+                                        Items="_locationData"
+                                        Name="Anzahl Verdächtige"
+                                        SeriesType="SeriesType.Bar"
+                                        XValue="@(e => e.Label)"
+                                        YAggregate="@(e => e.Sum(y => y.Value))"
+                                        OrderByDescending="e => e.Y" />
+                    </ApexChart>
+                }
+            </div>
+            
+            <div class="chart-card stats-card">
+                <h4>📈 Statistiken</h4>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value">@_records.Count</div>
+                        <div class="stat-label">Verdächtige</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">@GetAverageAge()</div>
+                        <div class="stat-label">Ø Alter</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">@GetTopLocation()</div>
+                        <div class="stat-label">Häufigster Ort</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="data-section">
         <div class="controls-bar">
             <div class="info">
@@ -93,6 +163,16 @@ else if (!_isLoading)
     private string? _sortColumn;
     private bool _sortAscending = true;
 
+    private List<ChartData> _suspicionData = new();
+    private List<ChartData> _ageData = new();
+    private List<ChartData> _locationData = new();
+
+    public class ChartData
+    {
+        public string Label { get; set; } = "";
+        public decimal Value { get; set; }
+    }
+
     private async Task HandleFileSelected(InputFileChangeEventArgs e)
     {
         _isLoading = true;
@@ -105,7 +185,7 @@ else if (!_isLoading)
         {
             var file = e.File;
             
-            if (file.Size > 10 * 1024 * 1024) // 10MB limit
+            if (file.Size > 10 * 1024 * 1024)
             {
                 _errorMessage = "Datei ist zu groß (max. 10 MB)";
                 return;
@@ -134,6 +214,8 @@ else if (!_isLoading)
                 }
                 _records.Add(record);
             }
+
+            GenerateCharts();
         }
         catch (Exception ex)
         {
@@ -144,6 +226,77 @@ else if (!_isLoading)
             _isLoading = false;
             StateHasChanged();
         }
+    }
+
+    private void GenerateCharts()
+    {
+        // Suspicion Chart
+        if (_headers.Contains("Faelle_Geloest"))
+        {
+            _suspicionData = _records
+                .Where(r => int.TryParse(r.GetValueOrDefault("Faelle_Geloest", "0"), out _))
+                .OrderByDescending(r => int.Parse(r.GetValueOrDefault("Faelle_Geloest", "0")))
+                .Take(10)
+                .Select(r => new ChartData
+                {
+                    Label = r.GetValueOrDefault("Name", "Unknown"),
+                    Value = int.Parse(r.GetValueOrDefault("Faelle_Geloest", "0"))
+                })
+                .ToList();
+        }
+
+        // Age Distribution
+        if (_headers.Contains("Alter"))
+        {
+            _ageData = _records
+                .Where(r => int.TryParse(r.GetValueOrDefault("Alter", "0"), out _))
+                .Select(r => int.Parse(r.GetValueOrDefault("Alter", "0")))
+                .GroupBy(age => (age / 10) * 10)
+                .OrderBy(g => g.Key)
+                .Select(g => new ChartData
+                {
+                    Label = $"{g.Key}-{g.Key + 9}",
+                    Value = g.Count()
+                })
+                .ToList();
+        }
+
+        // Location Distribution
+        if (_headers.Contains("Stadt"))
+        {
+            _locationData = _records
+                .GroupBy(r => r.GetValueOrDefault("Stadt", "Unknown"))
+                .OrderByDescending(g => g.Count())
+                .Take(5)
+                .Select(g => new ChartData
+                {
+                    Label = g.Key,
+                    Value = g.Count()
+                })
+                .ToList();
+        }
+    }
+
+    private string GetAverageAge()
+    {
+        if (!_headers.Contains("Alter")) return "N/A";
+        
+        var ages = _records
+            .Where(r => int.TryParse(r.GetValueOrDefault("Alter", "0"), out _))
+            .Select(r => int.Parse(r.GetValueOrDefault("Alter", "0")))
+            .ToList();
+        
+        return ages.Any() ? Math.Round(ages.Average(), 1).ToString() : "N/A";
+    }
+
+    private string GetTopLocation()
+    {
+        if (!_headers.Contains("Stadt")) return "N/A";
+        
+        return _records
+            .GroupBy(r => r.GetValueOrDefault("Stadt", "Unknown"))
+            .OrderByDescending(g => g.Count())
+            .FirstOrDefault()?.Key ?? "N/A";
     }
 
     private void SortBy(string column)
@@ -163,7 +316,6 @@ else if (!_isLoading)
     {
         var filtered = _records.AsEnumerable();
 
-        // Filter
         if (!string.IsNullOrWhiteSpace(_filterText))
         {
             filtered = filtered.Where(record =>
@@ -171,7 +323,6 @@ else if (!_isLoading)
                     value.Contains(_filterText, StringComparison.OrdinalIgnoreCase)));
         }
 
-        // Sort
         if (_sortColumn != null)
         {
             filtered = _sortAscending
